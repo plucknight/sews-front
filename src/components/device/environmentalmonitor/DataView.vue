@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
   <div id="dataview">
     <div class="item" v-for="(item, index) in data" :key="index">
       <div class="icon">
@@ -63,4 +63,4 @@ export default {
     }
   }
 }
-</style>
+</style> -->

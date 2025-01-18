@@ -13,13 +13,12 @@
         <p>{{ times }}</p>
       </div>
       <div>
-        <div class="icon-container">
-          <i class="iconfont icon-geren2"></i>&nbsp;
-        </div>
+        <div class="icon-container"></div>
       </div>
       <div>
         <div class="icon-container" @click="logout">
-          <i class="iconfont icon-dianyuan"></i>
+          <div class="out"></div>
+          <div class="out-text">退出</div>
         </div>
       </div>
     </div>
@@ -27,8 +26,6 @@
 </template>
 
 <script>
-import "../../assets/icon/iconfont.css";
-
 export default {
   data() {
     return {
@@ -145,9 +142,15 @@ export default {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 24px; /* 设置固定宽度 */
+    width: 50px; /* 设置固定宽度 */
     height: 24px; /* 设置固定高度，适配行高 */
     font-size: calc(100vw * 16 / 1920); /* 图标大小略小于行高 */
+  }
+  .out {
+    width: 24px;
+    height: 24px;
+    background-image: url("../../assets/icon/退出.png");
+    background-size: cover;
   }
 }
 

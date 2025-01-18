@@ -18,6 +18,7 @@ const Monitor = () => import("../views/Monitor.vue");
 
 // import Help from '../views/Help.vue'
 const Help = () => import("../views/Help.vue");
+const Fenye = () => import("../views/fenye.vue");
 
 const Photo = () => import("../views/Photo.vue");
 const Map = () => import("../views/Map.vue");
@@ -47,6 +48,8 @@ const routes = [
 
       { path: "/home/photo", name: "photo", component: Photo },
       { path: "/home/modelchose", name: "ModelChose", component: ModelChose },
+
+      { path: "/home/fenye", component: Fenye },
     ],
   },
   { path: "/", redirect: "/login" },

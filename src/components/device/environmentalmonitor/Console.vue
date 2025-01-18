@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
   <div id="console">
     <div class="phone">
       <span>预警手机号：</span>
@@ -55,4 +55,4 @@ export default {
     }
   }
 }
-</style>
+</style> -->

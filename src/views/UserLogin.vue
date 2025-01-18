@@ -1,7 +1,7 @@
 <template>
   <div class="login-container">
     <!-- 系统标题 -->
-    <h1 id="title">病害虫监测预警系统</h1>
+    <h1 class="title">作物靶标害虫自动监测预警系统</h1>
 
     <!-- 登录框 -->
     <div id="user-login">
@@ -82,7 +82,7 @@ export default {
   flex-direction: column; /* 标题和表单垂直排列 */
 }
 
-#title {
+.title {
   font-size: 2.5rem;
   color: white;
   margin-bottom: 1rem;

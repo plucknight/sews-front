@@ -15,6 +15,8 @@
     <router-link to="/home/photo"><div>设备图片</div></router-link>
 
     <router-link to="/home/test"><div>Test</div></router-link>
+
+    <router-link to="/home/fenye"><div>fenye</div></router-link>
   </nav>
 </template>
 
