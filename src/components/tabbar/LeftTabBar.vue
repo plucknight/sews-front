@@ -8,6 +8,8 @@
 
     <router-link to="/home/devicelist"><div>设备管理</div></router-link>
 
+    <router-link to="/home/deviceMaintenance"><div>设备维护</div></router-link>
+
     <router-link to="/home/modelchose"><div>模型选择</div></router-link>
 
     <router-link to="/home/earlywarning"><div>预警分析</div></router-link>

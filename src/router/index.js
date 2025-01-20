@@ -15,7 +15,7 @@ const ModelChose = () => import("../views/ModelChose.vue");
 const EarlyWarning = () => import("../views/EarlyWarning.vue");
 // import Monitor from '../views/Monitor.vue'
 const Monitor = () => import("../views/Monitor.vue");
-
+const DeviceMaintenance = () => import("../views/DeviceMaintenance.vue");
 // import Help from '../views/Help.vue'
 const Help = () => import("../views/Help.vue");
 const Fenye = () => import("../views/fenye.vue");
@@ -32,6 +32,7 @@ const routes = [
       { path: "/home", redirect: "/home/index" },
       { path: "/home/pestdata", component: PestData },
       { path: "/home/devicelist", name: "devicelist", component: DeviceList },
+      { path: "/home/deviceMaintenance", component: DeviceMaintenance },
       {
         path: "/home/index",
         component: Index,

@@ -41,7 +41,7 @@ api.interceptors.response.use(
   (response) => {
     const res = response.data;
     // 如果响应数据有返回并且不为 null
-    if (res !== null && response.status === 200) {
+    if ((res !== null && response.status === 200) || response.status === 201) {
       return res; // 假设后端返回的数据在 res.data 中
     } else {
       ElMessage.error(response.message || "请求失败");
@@ -49,9 +49,17 @@ api.interceptors.response.use(
     }
   },
   (error) => {
-    // 网络错误或其他响应错误
-    ElMessage.error("服务器发生错误，请稍后再试");
-    return Promise.reject(error);
+    if (error.response.status === 404) {
+      ElMessage({
+        type: "error",
+        message: "查找失败，请检查输入是否正确。",
+      });
+    } else {
+      // 网络错误或其他响应错误
+      ElMessage.error("服务器发生错误，请稍后再试");
+
+      return Promise.reject(error);
+    }
   }
 );
 
