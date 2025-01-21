@@ -4,144 +4,166 @@
       <template #title> 实时监控 </template>
     </Title>
 
-    <Space>
-      监控名称：
-      <Select v-model="model" style="width: 200px">
-        <Option
-          v-for="item in cityList"
-          :value="item.value"
-          :key="item.value"
-          >{{ item.label }}</Option
-        >
-      </Select>
-    </Space>
+    <!-- Element Plus 添加坐标和选择颜色的对话框 -->
+    <el-button @click="showInputDialog" type="primary" class="add-marker-btn"
+      >添加标记</el-button
+    >
+    <el-dialog
+      title="添加设备"
+      v-model="isDialogVisible"
+      width="400px"
+      @close="resetForm"
+    >
+      <el-form :model="newDevice" label-width="100px">
+        <el-form-item label="设备名称">
+          <el-input
+            v-model="newDevice.deviceName"
+            placeholder="输入设备名称"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="设备类型">
+          <el-input
+            v-model="newDevice.deviceType"
+            placeholder="输入设备类型"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="位置">
+          <el-input
+            v-model="newDevice.location"
+            placeholder="输入位置"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="纬度">
+          <el-input
+            v-model="newDevice.latitude"
+            type="number"
+            placeholder="输入纬度"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="经度">
+          <el-input
+            v-model="newDevice.longitude"
+            type="number"
+            placeholder="输入经度"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="作物类型">
+          <el-input
+            v-model="newDevice.cropType"
+            placeholder="输入作物类型"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="管理员姓名">
+          <el-input
+            v-model="newDevice.adminName"
+            placeholder="输入管理员姓名"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="管理员电话">
+          <el-input
+            v-model="newDevice.adminPhone"
+            placeholder="输入管理员电话"
+          ></el-input>
+        </el-form-item>
+      </el-form>
 
-    <Space>
-      监控位置：
-      <Select v-model="model" style="width: 200px">
-        <Option
-          v-for="item in cityList"
-          :value="item.value"
-          :key="item.value"
-          >{{ item.label }}</Option
-        >
-      </Select>
-    </Space>
-
-    <div class="monitor">
-      <!-- Optionally, you can add an image here -->
-      <!-- <img src="../assets/img/1.jpg" alt="" class="monitorimg"> -->
-
-      <!-- Map container -->
-      <div id="map-container">
-        <div id="map"></div>
-      </div>
-    </div>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="isDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="addDevice">确定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
-<script>
+<script setup>
 import Title from "@/components/device/Title.vue";
-import { Space, Select, Option } from "view-ui-plus";
-import * as L from "leaflet";
+import { ref, onMounted, onUpdated, onUnmounted } from "vue";
+import { ElButton, ElDialog, ElForm, ElFormItem, ElInput } from "element-plus";
 import "leaflet/dist/leaflet.css"; // 引入 Leaflet 的 CSS 文件
+// 弹窗数据模型
+const newDevice = ref({
+  deviceName: "",
+  deviceType: "",
+  location: "",
+  latitude: null,
+  longitude: null,
+  cropType: "",
+  adminName: "",
+  adminPhone: "",
+});
+const isDialogVisible = ref(false);
+const showInputDialog = () => {
+  console.log("点击了添加标记按钮");
+  isDialogVisible.value = true;
+  console.log("Dialog 显示状态:", isDialogVisible.value); // 输出弹窗状态
+};
 
-export default {
-  name: "monitor",
-  components: {
-    Title,
-    Space,
-    Select,
-    Option,
-  },
-  data() {
-    return {
-      model: "",
-      cityList: [
-        { value: "city1", label: "城市1" },
-        { value: "city2", label: "城市2" },
-        // Add more cities...
-      ],
-      map: null,
-    };
-  },
-  mounted() {
-    this.initMap();
-  },
-  methods: {
-    initMap() {
-      this.map = new L.Map("map", {
-        center: new L.LatLng(34.25, 108.95), // 调整中心到陕西
-        zoom: 10, // 增加缩放级别以放大地图
-      });
+const getIconByColor = (color) => {
+  const iconMap = {
+    green: require("@/assets/img/green.png"),
+    red: require("@/assets/img/red.png"),
+    yellow: require("@/assets/img/yellow.png"),
+  };
+  return L.icon({
+    iconUrl: iconMap[color],
+    iconSize: [25, 25],
+    iconAnchor: [10, 10],
+    popupAnchor: [0, -10],
+  });
+};
+// 重置表单
+const resetForm = () => {
+  newDevice.value = {
+    deviceName: "",
+    deviceType: "",
+    location: "",
+    latitude: null,
+    longitude: null,
+    cropType: "",
+    adminName: "",
+    adminPhone: "",
+  };
+};
+const addDevice = async () => {
+  const longTermPrediction = "长期预测结果：温暖气候可能导致害虫数量上升";
+  const previousResults = "前两次监测结果：数量分别为 20 和 25";
+  const currentPrediction = "本次预测结果：预计数量为 30";
+  const preventionSuggestions = "防治建议：使用生物农药进行防治";
+  console.log("Add Marker Function Called");
+  const deviceData = { ...newDevice.value }; // 获取表单数据
+  try {
+    const response = await axios.post("/api/devices", deviceData); // 发送请求到后端
+    console.log("设备添加成功", response.data);
 
-      const gaoDeVector = L.tileLayer(
-        "http://wprd04.is.autonavi.com/appmaptile?lang=zh_cn&size=1&style=7&x={x}&y={y}&z={z}",
-        {}
-      );
-
-      const osm = L.tileLayer(
-        "http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        {
-          maxZoom: 18,
-        }
-      );
-
-      const baseLayers = {
-        高德矢量: gaoDeVector,
-        OSM: osm,
-      };
-
-      const layerControl = L.control
-        .layers(
-          baseLayers,
-          {},
-          {
-            position: "topleft",
-            collapsed: true,
-          }
+    const { lat, lng, color } = newDevice.value;
+    if (lat !== null && lng !== null) {
+      const newIcon = getIconByColor(color); // 根据选择的颜色获取图标
+      const currentMap = initMap();
+      console.log(`Adding marker at Lat: ${lat}, Lng: ${lng}, Color: ${color}`);
+      // 在指定位置添加新标记
+      L.marker([lat, lng], { icon: newIcon })
+        .addTo(currentMap)
+        .bindPopup(
+          `
+        <div style="font-size: 14px; color: #333; line-height: 1.6;">
+          <strong>新标记: (${lat}, ${lng})</strong><br>
+          <div style="color: #007bff; font-weight: bold;">${longTermPrediction}</div><br>
+          <div style="color: #28a745;">${previousResults}</div><br>
+          <div style="color: #ffc107;">${currentPrediction}</div><br>
+          <div style="color: #dc3545; font-style: italic;">${preventionSuggestions}</div>
+        </div>
+      `
         )
-        .addTo(this.map);
+        .openPopup();
 
-      // 默认显示 OSM 图层
-      osm.addTo(this.map);
-
-      // 使用 Leaflet 默认图标
-      L.Icon.Default.imagePath = "https://unpkg.com/leaflet@1.7.1/dist/images"; // 确保路径正确
-
-      // 创建带有默认图标的标记
-      const xa = L.marker([34.34, 108.94]).bindPopup("这里是西安");
-      const xy = L.marker([34.35, 108.71]).bindPopup("这里是咸阳");
-      const yl = L.marker([34.27, 108.92]).bindPopup("这里是杨凌");
-
-      const cities = L.layerGroup([xa, xy, yl]);
-      cities.addTo(this.map);
-    },
-  },
+      isDialogVisible.value = false; // 关闭对话框
+      resetForm(); // 重置表单
+    }
+  } catch (error) {
+    console.error("添加设备失败", error);
+    alert("设备添加失败，请重试");
+  }
 };
 </script>
 
-<style lang="less" scoped>
-.monitor {
-  width: 100%;
-  padding: 2rem;
-  margin: 0 auto;
-  text-align: center;
-
-  #map-container {
-    width: 100%; /* 设置容器宽度为100% */
-    height: 400px; /* 设置容器高度 */
-    margin: 20px auto; /* 居中对齐 */
-    border: 1px solid #ccc; /* 添加边框 */
-
-    #map {
-      width: 100%;
-      height: 100%;
-    }
-  }
-
-  .monitorimg {
-    width: 80%;
-  }
-}
-</style>
+<style lang="less" scoped></style>

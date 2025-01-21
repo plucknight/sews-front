@@ -12,7 +12,8 @@
 
     <router-link to="/home/modelchose"><div>模型选择</div></router-link>
 
-    <router-link to="/home/earlywarning"><div>预警分析</div></router-link>
+    <router-link to="/home/warningRelus"><div>预警规则</div></router-link>
+    <router-link to="/home/warningInfo"><div>预警记录</div></router-link>
 
     <router-link to="/home/photo"><div>设备图片</div></router-link>
 

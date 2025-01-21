@@ -12,7 +12,9 @@ const DeviceList = () => import("../views/DeviceList.vue");
 
 const ModelChose = () => import("../views/ModelChose.vue");
 
-const EarlyWarning = () => import("../views/EarlyWarning.vue");
+const WarningRelus = () => import("../views/WarningRelus.vue");
+const WarningInfo = () => import("../views/WarningInfo.vue");
+
 // import Monitor from '../views/Monitor.vue'
 const Monitor = () => import("../views/Monitor.vue");
 const DeviceMaintenance = () => import("../views/DeviceMaintenance.vue");
@@ -42,8 +44,12 @@ const routes = [
         component: Test,
       },
       {
-        path: "/home/earlywarning",
-        component: EarlyWarning,
+        path: "/home/warningRelus",
+        component: WarningRelus,
+      },
+      {
+        path: "/home/warningInfo",
+        component: WarningInfo,
       },
       { path: "/home/monitor", name: "monitor", component: Monitor },
 

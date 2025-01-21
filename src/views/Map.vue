@@ -1,80 +1,104 @@
 <template>
   <Float />
   <div class="map-container" id="mapContainer"></div>
-  <div class="add-marker-btn" @click="showInputDialog">添加标记</div>
 
-  <!-- 弹出框 -->
-  <div v-show="isDialogVisible" class="dialog-overlay">
-    <div class="dialog">
-      <h3>添加标记</h3>
+  <!-- Element Plus 添加坐标和选择颜色的对话框 -->
+  <el-button @click="showInputDialog" type="primary" class="add-marker-btn"
+    >添加标记</el-button
+  >
+  <el-dialog
+    title="添加设备"
+    v-model="isDialogVisible"
+    width="400px"
+    @close="resetForm"
+  >
+    <el-form :model="newDevice" label-width="100px">
+      <el-form-item label="设备名称">
+        <el-input
+          v-model="newDevice.deviceName"
+          placeholder="输入设备名称"
+        ></el-input>
+      </el-form-item>
+      <el-form-item label="设备类型">
+        <el-input
+          v-model="newDevice.deviceType"
+          placeholder="输入设备类型"
+        ></el-input>
+      </el-form-item>
+      <el-form-item label="位置">
+        <el-input
+          v-model="newDevice.location"
+          placeholder="输入位置"
+        ></el-input>
+      </el-form-item>
+      <el-form-item label="纬度">
+        <el-input
+          v-model="newDevice.latitude"
+          type="number"
+          placeholder="输入纬度"
+        ></el-input>
+      </el-form-item>
+      <el-form-item label="经度">
+        <el-input
+          v-model="newDevice.longitude"
+          type="number"
+          placeholder="输入经度"
+        ></el-input>
+      </el-form-item>
+      <el-form-item label="作物类型">
+        <el-input
+          v-model="newDevice.cropType"
+          placeholder="输入作物类型"
+        ></el-input>
+      </el-form-item>
+      <el-form-item label="管理员姓名">
+        <el-input
+          v-model="newDevice.adminName"
+          placeholder="输入管理员姓名"
+        ></el-input>
+      </el-form-item>
+      <el-form-item label="管理员电话">
+        <el-input
+          v-model="newDevice.adminPhone"
+          placeholder="输入管理员电话"
+        ></el-input>
+      </el-form-item>
+    </el-form>
 
-      <label for="longitude">经度：</label>
-      <input
-        type="number"
-        id="longitude"
-        v-model="newMarker.lng"
-        placeholder="请输入经度"
-      />
-      <label for="latitude">纬度：</label>
-      <input
-        type="number"
-        id="latitude"
-        v-model="newMarker.lat"
-        placeholder="请输入纬度"
-      />
-      <label for="color">选择颜色：</label>
-      <select id="color" v-model="newMarker.color">
-        <option value="green">绿色</option>
-        <option value="red">红色</option>
-        <option value="yellow">黄色</option>
-      </select>
-
-      <button @click="addNewMarker">确定</button>
-      <button @click="closeDialog">取消</button>
-    </div>
-  </div>
-
-  <!-- 用于调试显示 -->
-  <div>
-    <h4>Dialog 显示状态: {{ isDialogVisible }}</h4>
-  </div>
+    <span slot="footer" class="dialog-footer">
+      <el-button @click="isDialogVisible = false">取消</el-button>
+      <el-button type="primary" @click="addDevice">确定</el-button>
+    </span>
+  </el-dialog>
 </template>
 
 <script setup>
 import { ref, onMounted, onUpdated, onUnmounted } from "vue";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import Float from "@/components/float/float.vue"; // 导入组件
-import geoJsonData from "@/assets/js/geo.json"; // 导入GeoJSON文件
+import Float from "@/components/float/float.vue";
+import geoJsonData from "@/assets/js/geo.json"; // 导入省级区域的GeoJSON数据
+import { ElButton, ElDialog, ElForm, ElFormItem, ElInput } from "element-plus";
 
-// 用来存储新的标记数据
-const newMarker = ref({
-  lat: null,
-  lng: null,
-  color: "green", // 默认颜色
+// 弹窗数据模型
+const newDevice = ref({
+  deviceName: "",
+  deviceType: "",
+  location: "",
+  latitude: null,
+  longitude: null,
+  cropType: "",
+  adminName: "",
+  adminPhone: "",
 });
-
-// 控制弹窗显示与隐藏
 const isDialogVisible = ref(false);
-
-// 用于存储地图实例
-let map = null;
-
-// 显示输入弹框
 const showInputDialog = () => {
   console.log("点击了添加标记按钮");
   isDialogVisible.value = true;
   console.log("Dialog 显示状态:", isDialogVisible.value); // 输出弹窗状态
 };
+let map = null;
 
-// 关闭弹框
-const closeDialog = () => {
-  console.log("关闭弹窗");
-  isDialogVisible.value = false;
-  console.log("Dialog 显示状态:", isDialogVisible.value); // 输出弹窗状态
-};
-
-// 根据选择的颜色返回对应的图标
 const getIconByColor = (color) => {
   const iconMap = {
     green: require("@/assets/img/green.png"),
@@ -82,20 +106,18 @@ const getIconByColor = (color) => {
     yellow: require("@/assets/img/yellow.png"),
   };
   return L.icon({
-    iconUrl: iconMap[color], // 根据颜色选择对应的图片
+    iconUrl: iconMap[color],
     iconSize: [25, 25],
     iconAnchor: [10, 10],
     popupAnchor: [0, -10],
   });
 };
 
-// 初始化地图的函数
 const initMap = () => {
-  if (map) return map; // 如果地图已经存在，直接返回现有地图实例
+  if (map) return map;
 
-  // 创建地图对象
   map = L.map("mapContainer", {
-    center: [34.3416, 108.9398], // 设置地图中心为西安的经纬度
+    center: [34.3416, 108.9398], // 初始坐标：西安的经纬度
     zoom: 5,
     minZoom: 5,
     maxZoom: 25,
@@ -103,32 +125,47 @@ const initMap = () => {
     attributionControl: false,
   });
 
-  // 设置地图底图层
   L.tileLayer(
     "https://webrd04.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x={x}&y={y}&z={z}",
     { attribution: "&copy; <p>OpenStreetMap</p> contributors" }
   ).addTo(map);
 
-  // 定义一个变量存储遮罩图层
-  let hoverLayer = null;
+  geoJsonData.features.forEach((feature) => processGeoJsonData(feature));
 
-  // 递归处理GeoJSON数据，加载省市区的区域
-  const processGeoJsonData = (node) => {
-    if (node.properties.level === "province") {
-      const geoData = node;
+  map.invalidateSize(); // 确保地图完全加载
+  return map;
+};
 
-      if (geoData && geoData.geometry) {
-        const provinceLayer = L.geoJSON(geoData, {
-          style: { color: "#C0C0C0", weight: 1, fillOpacity: 0.6 },
-          onEachFeature: (feature, layer) => {
-            layer.on("mouseover", () => {
-              const bounds = layer.getBounds();
+let hoverLayer = null; // 用于保存当前高亮的图层（保持唯一）
+let tooltipLayer = null;
+const processGeoJsonData = (node) => {
+  if (node.properties.level === "province") {
+    const geoData = node;
+    if (geoData && geoData.geometry) {
+      const provinceLayer = L.geoJSON(geoData, {
+        style: { color: "#C0C0C0", weight: 1, fillOpacity: 0.6 },
+        onEachFeature: (feature, layer) => {
+          const { name, level } = feature.properties;
+          layer.bindTooltip(
+            `Name: <strong>${name}</strong><br/>Level: ${level}`,
+            {
+              permanent: false,
+              direction: "top",
+              className: "province-tooltip",
+              offset: L.point(10, -40),
+            }
+          );
 
-              if (hoverLayer) {
-                map.removeLayer(hoverLayer);
-              }
+          let currentHoverLayer = null;
+          let currentTooltipLayer = null;
+          // 鼠标悬停时高亮
+          layer.on("mouseover", () => {
+            if (hoverLayer) {
+              map.removeLayer(hoverLayer);
+            }
 
-              hoverLayer = L.geoJSON(geoData, {
+            if (!currentHoverLayer) {
+              currentHoverLayer = L.geoJSON(geoData, {
                 style: {
                   color: "#61AFEF",
                   weight: 2,
@@ -136,63 +173,66 @@ const initMap = () => {
                   fillOpacity: 0.5,
                 },
               }).addTo(map);
-            });
+            }
+            if (!currentTooltipLayer) {
+              currentTooltipLayer = layer.openTooltip();
+            }
+          });
 
-            layer.on("mouseout", () => {
-              setTimeout(() => {
-                if (hoverLayer) {
-                  map.removeLayer(hoverLayer);
-                  hoverLayer = null;
-                }
-              }, 4000);
-            });
-
-            layer.on("click", () => {
-              map.setView(
-                node.properties.center || [34.3416, 108.9398],
-                map.getZoom()
-              );
-            });
-          },
-        }).addTo(map);
-
-        if (node.properties.children) {
-          node.properties.children.forEach((child) =>
-            processGeoJsonData(child)
-          );
-        }
-      }
+          // 鼠标移开时清除高亮图层
+          layer.on("mouseout", () => {
+            setTimeout(() => {
+              if (currentHoverLayer) {
+                map.removeLayer(currentHoverLayer);
+                currentHoverLayer = null;
+              }
+              if (currentTooltipLayer) {
+                layer.closeTooltip();
+                currentTooltipLayer = null;
+              }
+            }, 100);
+          });
+        },
+      }).addTo(map);
     }
-  };
-
-  // 处理GeoJSON数据
-  geoJsonData.features.forEach((feature) => processGeoJsonData(feature));
-
-  return map;
+  }
 };
 
-// 动态添加标记的函数
-const addNewMarker = () => {
-  console.log("准备添加新的标记");
-  const { lat, lng, color } = newMarker.value; // 获取用户输入的坐标和颜色
-
-  // 模拟的预测结果和防治建议
+// 重置表单
+const resetForm = () => {
+  newDevice.value = {
+    deviceName: "",
+    deviceType: "",
+    location: "",
+    latitude: null,
+    longitude: null,
+    cropType: "",
+    adminName: "",
+    adminPhone: "",
+  };
+};
+// 添加设备方法
+const addDevice = async () => {
   const longTermPrediction = "长期预测结果：温暖气候可能导致害虫数量上升";
   const previousResults = "前两次监测结果：数量分别为 20 和 25";
   const currentPrediction = "本次预测结果：预计数量为 30";
   const preventionSuggestions = "防治建议：使用生物农药进行防治";
+  console.log("Add Marker Function Called");
+  const deviceData = { ...newDevice.value }; // 获取表单数据
+  try {
+    const response = await axios.post("/api/devices", deviceData); // 发送请求到后端
+    console.log("设备添加成功", response.data);
 
-  if (lat && lng) {
-    const newIcon = getIconByColor(color); // 根据选择的颜色获取图标
-
-    // 获取地图实例
-    const currentMap = initMap();
-
-    // 在指定位置添加新标记
-    L.marker([lat, lng], { icon: newIcon })
-      .addTo(currentMap)
-      .bindPopup(
-        `
+    const { lat, lng, color } = newDevice.value;
+    if (lat !== null && lng !== null) {
+      const newIcon = getIconByColor(color); // 根据选择的颜色获取图标
+      const currentMap = initMap();
+      console.log(`Adding marker at Lat: ${lat}, Lng: ${lng}, Color: ${color}`);
+      // 在指定位置添加新标记
+      L.marker([lat, lng], { icon: newIcon })
+        .addTo(currentMap)
+        .bindPopup(
+          `
         <div style="font-size: 14px; color: #333; line-height: 1.6;">
           <strong>新标记: (${lat}, ${lng})</strong><br>
           <div style="color: #007bff; font-weight: bold;">${longTermPrediction}</div><br>
@@ -201,109 +241,51 @@ const addNewMarker = () => {
           <div style="color: #dc3545; font-style: italic;">${preventionSuggestions}</div>
         </div>
       `
-      )
-      .openPopup();
+        )
+        .openPopup();
 
-    console.log("标记已添加");
-  } else {
-    alert("请输入有效的坐标！");
+      isDialogVisible.value = false; // 关闭对话框
+      resetForm(); // 重置表单
+    }
+  } catch (error) {
+    console.error("添加设备失败", error);
+    alert("设备添加失败，请重试");
   }
-  closeDialog(); // 关闭弹窗
 };
 
-// 监听地图容器大小变化，确保蒙版大小和地图容器一致
-const onMapResize = () => {
-  const mapContainer = document.getElementById("mapContainer");
-  const dialogOverlay = document.querySelector(".dialog-overlay");
-
-  // 强制更新蒙版大小
-  dialogOverlay.style.width = `${mapContainer.offsetWidth}px`;
-  dialogOverlay.style.height = `${mapContainer.offsetHeight}px`;
-};
-
-// 在组件挂载后初始化地图，并设置监听器
 onMounted(() => {
   console.log("组件挂载，初始化地图");
   initMap();
-  onMapResize(); // 初始化时同步蒙版大小
-  window.addEventListener("resize", onMapResize); // 窗口大小改变时重新同步蒙版大小
 });
 
-// 在组件更新时同步蒙版大小
-onUpdated(() => {
-  onMapResize(); // 更新时同步蒙版
-});
+onUpdated(() => {});
 
-// 清理监听器
-onUnmounted(() => {
-  window.removeEventListener("resize", onMapResize);
-});
+onUnmounted(() => {});
 </script>
 
-<style>
+<style scoped>
 .map-container {
   position: relative;
   width: 100%;
   height: 100vh;
 }
-
+.province-tooltip {
+  font-size: 14px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 5px;
+  padding: 5px 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
 .add-marker-btn {
-  position: fixed; /* 固定位置 */
+  position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%); /* 居中 */
+  transform: translate(-50%, -50%);
   background-color: #fff;
   padding: 10px 20px;
   border-radius: 5px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   cursor: pointer;
-  z-index: 1000; /* 确保按钮在地图上方 */
-}
-
-.dialog-overlay {
-  position: absolute; /* 绝对定位确保蒙版跟地图容器同步 */
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1001; /* 确保蒙版在地图之上 */
-}
-
-.dialog {
-  background-color: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  width: 300px;
-  z-index: 1002; /* 弹窗本身的z-index */
-}
-
-.dialog h3 {
-  text-align: center;
-}
-
-.dialog input,
-.dialog select {
-  width: 100%;
-  padding: 8px;
-  margin: 5px 0;
-}
-
-.dialog button {
-  width: 48%;
-  padding: 10px;
-  margin-top: 10px;
-  border: none;
-  background-color: #007bff;
-  color: white;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.dialog button:hover {
-  background-color: #0056b3;
+  z-index: 1000;
 }
 </style>

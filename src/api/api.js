@@ -71,6 +71,32 @@ export const updateWarningRule = (warningRule) => {
   return api.post(`/warningRules/update`, warningRule);
 };
 
+//预警记录
+export const getAllWarningInfo = () => {
+  return api.get("/warning/getAllWarningInfo");
+};
+export const getWarningInfoById = (warning_id) => {
+  return api.get(`/warning/${warning_id}`);
+};
+export const deleteWarningInfoById = (warning_id) => {
+  return api.get(`/warning/delete/${warning_id}`);
+};
+export const addWarningInfo = (warningInfo) => {
+  return api.post(`/warning/addwarningInfo`, warningInfo);
+};
+export const updateWarningInfo = (warningInfo) => {
+  return api.post(`/warning/update`, warningInfo);
+};
+
+//图片
+
+export const getAllMonitoringPhotos = () => {
+  return api.get("/monitoringPhoto/getAllMonitoringPhotos");
+};
+export const getMonitoringPhotoById = (deviceId) => {
+  return api.get(`/monitoringPhoto/device/${deviceId}`);
+};
+
 export const login = (data) => {
   return api.post("/login", data); // 登录接口
 };
