@@ -106,7 +106,6 @@ export default {
     ElTable,
     ElTableColumn,
     ElButton,
-    ElMessageBox,
     ElPagination,
     ElPopconfirm,
     ElDialog,

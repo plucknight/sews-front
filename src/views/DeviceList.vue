@@ -18,6 +18,77 @@
 
       <!-- 右侧：新增按钮 -->
       <div class="right">
+        <!-- Element Plus 添加坐标和选择颜色的对话框 -->
+        <el-button
+          @click="showInputDialog"
+          type="primary"
+          class="add-marker-btn"
+          >添加设备</el-button
+        >
+        <el-dialog
+          title="添加设备"
+          v-model="isDialogVisible"
+          width="400px"
+          @close="resetForm"
+        >
+          <el-form :model="newDevice" label-width="100px">
+            <el-form-item label="设备名称">
+              <el-input
+                v-model="newDevice.deviceName"
+                placeholder="输入设备名称"
+              ></el-input>
+            </el-form-item>
+            <el-form-item label="设备类型">
+              <el-input
+                v-model="newDevice.trapsId"
+                placeholder="输入设备类型"
+              ></el-input>
+            </el-form-item>
+            <el-form-item label="位置">
+              <el-input
+                v-model="newDevice.location"
+                placeholder="输入位置"
+              ></el-input>
+            </el-form-item>
+            <el-form-item label="纬度">
+              <el-input
+                v-model="newDevice.latitude"
+                type="number"
+                placeholder="输入纬度"
+              ></el-input>
+            </el-form-item>
+            <el-form-item label="经度">
+              <el-input
+                v-model="newDevice.longitude"
+                type="number"
+                placeholder="输入经度"
+              ></el-input>
+            </el-form-item>
+            <el-form-item label="作物类型">
+              <el-input
+                v-model="newDevice.cropType"
+                placeholder="输入作物类型"
+              ></el-input>
+            </el-form-item>
+            <el-form-item label="管理员姓名">
+              <el-input
+                v-model="newDevice.adminName"
+                placeholder="输入管理员姓名"
+              ></el-input>
+            </el-form-item>
+            <el-form-item label="管理员电话">
+              <el-input
+                v-model="newDevice.adminPhone"
+                placeholder="输入管理员电话"
+              ></el-input>
+            </el-form-item>
+          </el-form>
+
+          <span slot="footer" class="dialog-footer">
+            <el-button @click="isDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="addDevice1">确定</el-button>
+          </span>
+        </el-dialog>
         <el-button type="success" @click="handleAdd">Add New</el-button>
       </div>
     </div>
@@ -35,8 +106,8 @@
     >
       <!-- <el-table-column label="deviceId" prop="deviceId"></el-table-column> -->
       <el-table-column label="deviceName" prop="deviceName"></el-table-column>
-      <el-table-column label="deviceType" prop="deviceType"></el-table-column>
-      <!-- <el-table-column label="location" prop="location"></el-table-column> -->
+      <el-table-column label="trapsId" prop="trapsId"></el-table-column>
+      <el-table-column label="location" prop="location"></el-table-column>
       <el-table-column label="latitude" prop="latitude"></el-table-column>
       <el-table-column label="longitude" prop="longitude"></el-table-column>
       <el-table-column label="cropType" prop="cropType"></el-table-column>
@@ -100,8 +171,8 @@
         <el-form-item label="deviceName" prop="deviceName">
           <el-input v-model="editForm.deviceName" />
         </el-form-item>
-        <el-form-item label="deviceType" prop="deviceType">
-          <el-input v-model="editForm.deviceType" />
+        <el-form-item label="trapsId" prop="trapsId">
+          <el-input v-model="editForm.trapsId" />
         </el-form-item>
         <el-form-item label="location" prop="location">
           <el-input v-model="editForm.location" />
@@ -141,7 +212,8 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted, reactive, watch } from "vue";
 import {
   ElTable,
   ElTableColumn,
@@ -166,189 +238,255 @@ import {
 } from "@/api/api"; // 引入封装好的请求方法
 import { formatDate } from "@/utils/dateUtils.js"; // 引入自定义的日期格式化函数
 
-export default {
-  components: {
-    ElTable,
-    ElTableColumn,
-    ElButton,
-    ElMessageBox,
-    ElPagination,
-    ElPopconfirm,
-    ElDialog,
-    ElForm,
-    ElFormItem,
-    ElInput,
-    ElDatePicker,
-    Title,
-  },
-  data() {
-    return {
-      deviceTableData: [],
-      currentPage: 1,
-      pagesize: 10,
-      dialogVisible: false,
-      editForm: {
-        deviceId: "",
-        deviceName: "",
-        deviceType: "",
-        location: "",
-        latitude: "",
-        longitude: "",
-        cropType: "",
-        adminName: "",
-        adminId: "",
-        adminPhone: "",
-        installTime: "",
-        status: "",
-        dataTime: "",
-      },
-      searchQuery: "", // 用于存储查询框输入的内容
-    };
-  },
-  mounted() {
-    this.fetchAllDevices();
-  },
-  methods: {
-    formatDate,
-    async fetchAllDevices() {
-      try {
-        const response = await getAllDevices();
-        this.deviceTableData = response; // 假设 API 返回的是设备数据
-      } catch (error) {
-        console.error("Error fetching devices:", error);
-      }
-    },
-    handleSizeChange(size) {
-      this.pagesize = size;
-    },
-    handleCurrentChange(page) {
-      this.currentPage = page;
-    },
-    async handleSearch() {
-      try {
-        if (this.searchQuery === "" || this.searchQuery == null) {
-          return (this.deviceTableData = await getAllDevices());
-        }
-        const response = await getDeviceById(this.searchQuery);
-        if (response != null) {
-          console.log("Searching for:", response);
-          this.deviceTableData = [response];
-        }
-      } catch (error) {
-        console.error("Error searching for device:", error);
-      }
-    },
-    handleAdd() {
-      // 重置表单，准备新增
-      this.editForm = {
-        deviceName: "",
-        deviceType: "",
-        location: "",
-        latitude: "",
-        longitude: "",
-        cropType: "",
-        adminName: "",
-        adminId: "",
-        adminPhone: "",
-        installTime: new Date(),
-        status: "",
-        dataTime: new Date(),
-      };
-      this.dialogVisible = true; // 显示编辑对话框
-    },
+// State
+const deviceTableData = ref([]);
+const currentPage = ref(1);
+const pagesize = ref(10);
+const dialogVisible = ref(false);
+const searchQuery = ref("");
+const editForm = reactive({
+  deviceId: "",
+  deviceName: "",
+  trapsId: "",
+  location: "",
+  latitude: "",
+  longitude: "",
+  cropType: "",
+  adminName: "",
+  adminId: "",
+  adminPhone: "",
+  installTime: "",
+  status: "",
+  dataTime: "",
+});
 
-    handleEdit(row) {
-      // 将表格行数据赋值给编辑表单
-      this.editForm = { ...row };
-      this.dialogVisible = true; // 显示编辑对话框
-    },
-    handleDialogClose() {
-      this.editForm = {
-        deviceId: "",
-        deviceName: "",
-        deviceType: "",
-        location: "",
-        latitude: "",
-        longitude: "",
-        cropType: "",
-        adminName: "",
-        adminId: "",
-        adminPhone: "",
-        installTime: "",
-        status: "",
-        dataTime: "",
-      };
-    },
-    async handleSave() {
-      try {
-        if (this.editForm.deviceId) {
-          // 如果 deviceId 存在，则是更新操作
-          const response = await updateDevice(
-            this.editForm.deviceId,
-            this.editForm
-          );
-          console.log("res", response);
-          const index = this.deviceTableData.findIndex(
-            (item) => item.deviceId === this.editForm.deviceId
-          );
-          if (index !== -1) {
-            this.deviceTableData.splice(index, 1, { ...this.editForm });
-          }
-          ElMessage({
-            type: "success",
-            message: "Device updated successfully!",
-          });
-        } else {
-          // 否则是新增操作
-          const newDevice = await addDevice(this.editForm);
-          console.log("newDevice", newDevice);
-          this.deviceTableData.push(newDevice); // 将新添加的设备加入表格数据
-          ElMessage({
-            type: "success",
-            message: "Device added successfully!",
-          });
-        }
-        this.dialogVisible = false; // 关闭对话框
-      } catch (error) {
-        console.error("Error saving device:", error);
+// Methods
+const fetchAllDevices = async () => {
+  try {
+    const response = await getAllDevices();
+    deviceTableData.value = response;
+  } catch (error) {
+    console.error("Error fetching devices:", error);
+  }
+};
+
+const handleSizeChange = (size) => {
+  pagesize.value = size;
+};
+
+const handleCurrentChange = (page) => {
+  currentPage.value = page;
+};
+
+const handleSearch = async () => {
+  try {
+    if (!searchQuery.value) {
+      return (deviceTableData.value = await getAllDevices());
+    }
+    const response = await getDeviceById(searchQuery.value);
+    if (response) {
+      deviceTableData.value = [response];
+    }
+  } catch (error) {
+    console.error("Error searching for device:", error);
+  }
+};
+
+const handleAdd = () => {
+  // Reset form and prepare for adding a new device
+  Object.assign(editForm, {
+    deviceName: "",
+    trapsId: "",
+    location: "",
+    latitude: "",
+    longitude: "",
+    cropType: "",
+    adminName: "",
+    adminId: "",
+    adminPhone: "",
+    installTime: new Date(),
+    status: "",
+    dataTime: new Date(),
+  });
+  dialogVisible.value = true;
+};
+
+const handleEdit = (row) => {
+  // Fill form with data from the selected row
+  Object.assign(editForm, row);
+  dialogVisible.value = true;
+};
+
+const handleDialogClose = () => {
+  // Reset form
+  Object.assign(editForm, {
+    deviceId: "",
+    deviceName: "",
+    trapsId: "",
+    location: "",
+    latitude: "",
+    longitude: "",
+    cropType: "",
+    adminName: "",
+    adminId: "",
+    adminPhone: "",
+    installTime: "",
+    status: "",
+    dataTime: "",
+  });
+};
+
+const handleSave = async () => {
+  try {
+    if (editForm.deviceId) {
+      // Update device
+      const response = await updateDevice(editForm.deviceId, editForm);
+      const index = deviceTableData.value.findIndex(
+        (item) => item.deviceId === editForm.deviceId
+      );
+      if (index !== -1) {
+        deviceTableData.value.splice(index, 1, { ...editForm });
+      }
+      ElMessage({
+        type: "success",
+        message: "Device updated successfully!",
+      });
+    } else {
+      // Add new device
+      const newDevice = await addDevice(editForm);
+      deviceTableData.value.push(newDevice);
+      ElMessage({
+        type: "success",
+        message: "Device added successfully!",
+      });
+    }
+    dialogVisible.value = false;
+  } catch (error) {
+    console.error("Error saving device:", error);
+    ElMessage({
+      type: "error",
+      message: "Failed to save device.",
+    });
+  }
+};
+
+const handleDelete = (row) => {
+  ElMessageBox.confirm(
+    "Are you sure you want to delete this device?",
+    "Warning",
+    {
+      confirmButtonText: "Delete",
+      cancelButtonText: "Cancel",
+      type: "warning",
+    }
+  )
+    .then(async () => {
+      const index = deviceTableData.value.findIndex(
+        (item) => item.deviceId === row.deviceId
+      );
+      if (index !== -1) {
+        await deleteDeviceById(row.deviceId);
+        deviceTableData.value.splice(index, 1);
         ElMessage({
-          type: "error",
-          message: "Failed to save device.",
+          type: "success",
+          message: "Device deleted successfully!",
         });
       }
-    },
-    handleDelete(row) {
-      ElMessageBox.confirm(
-        "Are you sure you want to delete this device?",
-        "Warning",
-        {
-          confirmButtonText: "Delete",
-          cancelButtonText: "Cancel",
-          type: "warning",
-        }
-      )
-        .then(() => {
-          const index = this.deviceTableData.findIndex(
-            (item) => item.deviceId === row.deviceId
-          );
-          if (index !== -1) {
-            const response = deleteDeviceById(row.deviceId);
-            this.deviceTableData.splice(index, 1); // 删除表格中的数据
-            ElMessage({
-              type: "success",
-              message: "Device deleted successfully!",
-            });
-          }
-        })
-        .catch(() => {
-          ElMessage({
-            type: "info",
-            message: "Delete cancelled",
-          });
-        });
-    },
-  },
+    })
+    .catch(() => {
+      ElMessage({
+        type: "info",
+        message: "Delete cancelled",
+      });
+    });
 };
+const newDevice = ref({
+  deviceName: "",
+  trapsId: "",
+  location: "",
+  latitude: null,
+  longitude: null,
+  cropType: "",
+  adminName: "",
+  adminPhone: "",
+});
+const isDialogVisible = ref(false);
+const showInputDialog = () => {
+  console.log("点击了添加标记按钮");
+  isDialogVisible.value = true;
+  console.log("Dialog 显示状态:", isDialogVisible.value); // 输出弹窗状态
+};
+
+const getIconByColor = (color) => {
+  const iconMap = {
+    green: require("@/assets/img/green.png"),
+    red: require("@/assets/img/red.png"),
+    yellow: require("@/assets/img/yellow.png"),
+  };
+  return L.icon({
+    iconUrl: iconMap[color],
+    iconSize: [25, 25],
+    iconAnchor: [10, 10],
+    popupAnchor: [0, -10],
+  });
+};
+// 重置表单
+const resetForm = () => {
+  newDevice.value = {
+    deviceName: "",
+    trapsId: "",
+    location: "",
+    latitude: null,
+    longitude: null,
+    cropType: "",
+    adminName: "",
+    adminPhone: "",
+  };
+};
+const addDevice1 = async () => {
+  const longTermPrediction = "长期预测结果：温暖气候可能导致害虫数量上升";
+  const previousResults = "前两次监测结果：数量分别为 20 和 25";
+  const currentPrediction = "本次预测结果：预计数量为 30";
+  const preventionSuggestions = "防治建议：使用生物农药进行防治";
+  console.log("Add Marker Function Called");
+  const deviceData = { ...newDevice.value }; // 获取表单数据
+  try {
+    const response = await addDevice(deviceData); // 发送请求到后端
+    console.log("设备添加成功", response.data);
+
+    const { lat, lng, color } = newDevice.value;
+    if (lat !== null && lng !== null) {
+      const newIcon = getIconByColor(color); // 根据选择的颜色获取图标
+      const currentMap = initMap();
+      console.log(`Adding marker at Lat: ${lat}, Lng: ${lng}, Color: ${color}`);
+      // 在指定位置添加新标记
+      L.marker([lat, lng], { icon: newIcon })
+        .addTo(currentMap)
+        .bindPopup(
+          `
+        <div style="font-size: 14px; color: #333; line-height: 1.6;">
+          <strong>新标记: (${lat}, ${lng})</strong><br>
+          <div style="color: #007bff; font-weight: bold;">${longTermPrediction}</div><br>
+          <div style="color: #28a745;">${previousResults}</div><br>
+          <div style="color: #ffc107;">${currentPrediction}</div><br>
+          <div style="color: #dc3545; font-style: italic;">${preventionSuggestions}</div>
+        </div>
+      `
+        )
+        .openPopup();
+
+      isDialogVisible.value = false; // 关闭对话框
+      resetForm(); // 重置表单
+    }
+  } catch (error) {
+    console.error("添加设备失败", error);
+    alert("设备添加失败，请重试");
+  }
+};
+// Lifecycle hooks
+onMounted(() => {
+  fetchAllDevices();
+});
 </script>
 
 <style scoped>

@@ -1,89 +1,73 @@
 <template>
-  <nav v-if="bigwidth === true" class="nav">
-    <router-link to="/home/index"><div>首页</div></router-link>
-
-    <router-link to="/home/monitor"><div>实时监控</div></router-link>
-
-    <router-link to="/home/pestdata"><div>历史数据</div></router-link>
-
-    <router-link to="/home/devicelist"><div>设备管理</div></router-link>
-
-    <router-link to="/home/deviceMaintenance"><div>设备维护</div></router-link>
-
-    <router-link to="/home/modelchose"><div>模型选择</div></router-link>
-
-    <router-link to="/home/warningRelus"><div>预警规则</div></router-link>
-    <router-link to="/home/warningInfo"><div>预警记录</div></router-link>
-
-    <router-link to="/home/photo"><div>设备图片</div></router-link>
-
-    <router-link to="/home/test"><div>Test</div></router-link>
-
-    <router-link to="/home/fenye"><div>fenye</div></router-link>
+  <nav v-if="bigwidth" class="nav">
+    <!-- 动态渲染菜单 -->
+    <router-link v-for="item in filteredMenu" :key="item.to" :to="item.to">
+      <div>{{ item.name }}</div>
+    </router-link>
   </nav>
 </template>
 
-<script>
-import { Menu, MenuItem, Button, Drawer, Icon } from "view-ui-plus";
-export default {
-  data() {
-    return {
-      theme: "dark",
-      router: null,
-      bigwidth: true,
-      value1: false,
-    };
-  },
-  components: {
-    Menu,
-    MenuItem,
-    Button,
-    Drawer,
-    Icon,
-  },
-  created() {
-    this.getwidth();
-  },
-  methods: {
-    getwidth() {
-      console.log("device", window.innerWidth);
-      this.bigwidth = window.innerWidth > 720 ? true : false;
-    },
-  },
-  mounted() {
-    window.addEventListener("resize", () => {
-      return (() => {
-        this.$nextTick(() => {
-          this.bigwidth = window.innerWidth > 720 ? true : false;
-        });
-      })();
-    });
-  },
-  watch: {
-    $route: {
-      handler(val) {
-        this.router = "/" + val.name;
-      },
-      // 深度观察监听
-      deep: true,
-      immediate: true,
-    },
-  },
+<script setup>
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { getAdminInfo } from "@/api/api";
+// 响应式数据
+const bigwidth = ref(true);
+const userRole = ref(1); // 假设这是从接口或登录信息获取的角色
+const menuItems = ref([
+  { name: "首页", to: "/home/index", roles: [1] },
+  { name: "实时监控", to: "/home/monitor", roles: [1, 2] },
+  { name: "设备管理", to: "/home/devicelist", roles: [1, 2] },
+  { name: "设备维护", to: "/home/deviceMaintenance", roles: [1, 2] },
+  { name: "用户管理", to: "/home/admin", roles: [1] },
+  { name: "害虫记录", to: "/home/photo", roles: [1, 2] },
+  { name: "模型选择", to: "/home/modelchose", roles: [1, 2] },
+  { name: "预警规则", to: "/home/warningRelus", roles: [1, 2] },
+  { name: "预警记录", to: "/home/warningInfo", roles: [1, 2] },
+  { name: "气象数据", to: "/home/weatherData", roles: [1, 2] },
+  { name: "管理权限", to: "/home/adminPermission", roles: [1] },
+]);
+
+// 根据角色过滤出应该显示的菜单项
+const filteredMenu = computed(() =>
+  menuItems.value.filter((item) => item.roles.includes(userRole.value))
+);
+const getUserRelo = async () => {
+  try {
+    const adminInfo = await getAdminInfo();
+    console.log("adminInfo" + adminInfo);
+    if (adminInfo.role) {
+      userRole.value = adminInfo.role;
+    }
+  } catch (error) {
+    console.error("Error fetching weather data:", error);
+  }
 };
+// 监听窗口大小变化
+const handleResize = () => {
+  bigwidth.value = window.innerWidth > 720;
+};
+
+onMounted(async () => {
+  await getUserRelo(); // 获取用户角色
+  handleResize(); // 初始化时设置 bigwidth
+  window.addEventListener("resize", handleResize);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("resize", handleResize);
+});
 </script>
 
 <style lang="less" scoped>
 .nav {
   position: fixed;
   z-index: 0;
-
   top: 4.4rem;
   height: 100%;
   width: 8rem;
-
   background-color: rgb(159, 194, 162);
-  // width: 100%;
-  // height: 100%;
+
   a {
     div {
       color: rgb(0, 0, 0);
@@ -98,38 +82,16 @@ export default {
       background-color: green; /* 添加绿色背景 */
       color: white; /* 文字颜色改为白色 */
     }
-    // .router-link-active {
-    //   div {
-    //     color: skyblue;
-    //   }
   }
 }
-.mosalnav {
-  position: fixed;
-  z-index: 999;
-}
 
-@media screen and (max-width: 720px) {
-}
-</style>
-
-<!-- 修改侧边导航栏样式 -->
-<style lang="less">
 @media screen and (max-width: 720px) {
   .ivu-drawer-content {
-    // width:50% !important;
     height: 100% !important;
     background-color: rgba(222, 29, 29, 0.306) !important;
     box-shadow: 0px 0px 0px rgba(222, 3, 3, 0) !important;
     .ivu-menu {
       height: 100% !important;
-    }
-  }
-  .opendrawer {
-    .ivu-btn {
-      top: 4.4rem;
-      position: fixed;
-      z-index: 99 !important;
     }
   }
 }

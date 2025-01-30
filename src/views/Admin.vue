@@ -1,27 +1,30 @@
 <template>
   <div>
     <Title>
-      <template #title> Warning Rules </template>
+      <template #title> Admin Management </template>
     </Title>
 
     <!-- 添加查询框和查询按钮 -->
     <div class="search-container">
+      <!-- 左侧：查询框和查询按钮 -->
       <div class="left">
         <el-input
           v-model="searchQuery"
-          placeholder="Enter rule name to search"
+          placeholder="Enter username or email to search"
           style="width: 200px; margin-right: 10px"
         />
         <el-button type="primary" @click="handleSearch">Search</el-button>
       </div>
+
+      <!-- 右侧：新增按钮 -->
       <div class="right">
-        <el-button type="success" @click="handleAdd">Add New</el-button>
+        <el-button type="success" @click="handleAdd">Add New Admin</el-button>
       </div>
     </div>
 
     <el-table
       :data="
-        warningRulesTableData.slice(
+        adminTableData.slice(
           (currentPage - 1) * pagesize,
           currentPage * pagesize
         )
@@ -30,28 +33,32 @@
       border
       :header-cell-style="{ background: '#eef1f6', color: '#606266' }"
     >
-      <el-table-column label="ruleId" prop="ruleId"></el-table-column>
-      <el-table-column label="ruleName" prop="ruleName"></el-table-column>
-      <el-table-column label="deviceType" prop="deviceType"></el-table-column>
-      <el-table-column
-        label="warningLevel"
-        prop="warningLevel"
-      ></el-table-column>
-      <el-table-column label="threshold" prop="threshold"></el-table-column>
-      <el-table-column label="description" prop="description"></el-table-column>
-      <el-table-column label="isActive" prop="isActive"></el-table-column>
-      <el-table-column label="createTime" prop="createTime">
+      <el-table-column label="ID" prop="id"></el-table-column>
+      <el-table-column label="Username" prop="username"></el-table-column>
+      <el-table-column label="Role" prop="role">
         <template #default="{ row }">
-          {{ formatDate(row.createTime) }}
+          {{ row.role === 1 ? "SuperAdmin" : "Admin" }}
+        </template>
+      </el-table-column>
+      <el-table-column label="Email" prop="email"></el-table-column>
+      <el-table-column label="Phone" prop="phone"></el-table-column>
+      <el-table-column label="Created At" prop="createdAt">
+        <template #default="{ row }">
+          {{ formatDate(row.createdAt) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="Updated At" prop="updatedAt">
+        <template #default="{ row }">
+          {{ formatDate(row.updatedAt) }}
         </template>
       </el-table-column>
       <el-table-column label="Operations">
         <template #default="scope">
-          <el-button size="small" @click="handleEdit(scope.row)"
-            >Edit</el-button
-          >
+          <el-button size="small" @click="handleEdit(scope.row)">
+            Edit
+          </el-button>
           <el-popconfirm
-            title="Are you sure to delete this rule?"
+            title="Are you sure you want to delete this admin?"
             @confirm="handleDelete(scope.row)"
           >
             <template #reference>
@@ -71,7 +78,7 @@
         :page-sizes="[5, 10, 20]"
         :page-size="pagesize"
         layout="total, sizes, prev, pager, next, jumper"
-        :total="warningRulesTableData.length"
+        :total="adminTableData.length"
         size="small"
       />
     </div>
@@ -79,29 +86,29 @@
     <!-- 编辑对话框 -->
     <el-dialog
       v-model="dialogVisible"
-      title="Edit Warning Rule"
+      title="Edit Admin Information"
       :visible.sync="dialogVisible"
       width="400px"
       @close="handleDialogClose"
     >
       <el-form :model="editForm">
-        <el-form-item label="ruleName" prop="ruleName">
-          <el-input v-model="editForm.ruleName" />
+        <el-form-item label="Username" prop="username">
+          <el-input v-model="editForm.username" />
         </el-form-item>
-        <el-form-item label="deviceType" prop="deviceType">
-          <el-input v-model="editForm.deviceType" />
+        <el-form-item label="Password" prop="password">
+          <el-input v-model="editForm.password" type="password" />
         </el-form-item>
-        <el-form-item label="warningLevel" prop="warningLevel">
-          <el-input v-model="editForm.warningLevel" />
+        <el-form-item label="Role" prop="role">
+          <el-radio-group v-model="editForm.role">
+            <el-radio :label="1">SuperAdmin</el-radio>
+            <el-radio :label="2">Admin</el-radio>
+          </el-radio-group>
         </el-form-item>
-        <el-form-item label="threshold" prop="threshold">
-          <el-input v-model="editForm.threshold" type="number" />
+        <el-form-item label="Email" prop="email">
+          <el-input v-model="editForm.email" />
         </el-form-item>
-        <el-form-item label="description" prop="description">
-          <el-input v-model="editForm.description" />
-        </el-form-item>
-        <el-form-item label="isActive" prop="isActive">
-          <el-switch v-model="editForm.isActive" />
+        <el-form-item label="Phone" prop="phone">
+          <el-input v-model="editForm.phone" />
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -125,15 +132,16 @@ import {
   ElForm,
   ElFormItem,
   ElInput,
-  ElSwitch,
+  ElRadioGroup,
+  ElRadio,
 } from "element-plus";
 import Title from "@/components/device/Title.vue"; // 假设 Title 是一个已定义的组件
 import {
-  getAllWarningRules,
-  getWarningRuleById,
-  updateWarningRule,
-  addWarningRule,
-  deleteWarningRuleById,
+  getAllAdmins,
+  getAdminById,
+  updateAdmin,
+  addAdmin,
+  deleteAdminById,
 } from "@/api/api"; // 引入封装好的请求方法
 import { formatDate } from "@/utils/dateUtils.js"; // 引入自定义的日期格式化函数
 
@@ -149,40 +157,40 @@ export default {
     ElForm,
     ElFormItem,
     ElInput,
-    ElSwitch,
+    ElRadioGroup,
+    ElRadio,
     Title,
   },
   data() {
     return {
-      warningRulesTableData: [],
+      adminTableData: [],
       currentPage: 1,
       pagesize: 10,
       dialogVisible: false,
       editForm: {
-        ruleId: "",
-        ruleName: "",
-        deviceType: "",
-        warningLevel: "",
-        threshold: 0,
-        description: "",
-        isActive: true,
-        createTime: "",
-        updateTime: "",
+        id: "",
+        username: "",
+        password: "",
+        role: 1,
+        email: "",
+        phone: "",
+        createdAt: "",
+        updatedAt: "",
       },
-      searchQuery: "",
+      searchQuery: "", // 用于存储查询框输入的内容
     };
   },
   mounted() {
-    this.fetchAllWarningRules();
+    this.fetchAllAdmins();
   },
   methods: {
     formatDate,
-    async fetchAllWarningRules() {
+    async fetchAllAdmins() {
       try {
-        const response = await getAllWarningRules();
-        this.warningRulesTableData = response;
+        const response = await getAllAdmins();
+        this.adminTableData = response; // 假设 API 返回的是管理员数据
       } catch (error) {
-        console.error("Error fetching warning rules:", error);
+        console.error("Error fetching admins:", error);
       }
     },
     handleSizeChange(size) {
@@ -194,81 +202,86 @@ export default {
     async handleSearch() {
       try {
         if (this.searchQuery === "" || this.searchQuery == null) {
-          return (this.warningRulesTableData = await getAllWarningRules());
+          return (this.adminTableData = await getAllAdmins());
         }
-        const response = await getWarningRuleById(this.searchQuery);
+        const response = await getAdminById(this.searchQuery);
         if (response != null) {
-          this.warningRulesTableData = [response];
+          console.log("Searching for:", response);
+          this.adminTableData = [response];
         }
       } catch (error) {
         console.error(error);
       }
     },
     handleAdd() {
+      // 重置表单，准备新增
       this.editForm = {
-        ruleName: "",
-        deviceType: "",
-        warningLevel: "",
-        threshold: 0,
-        description: "",
-        isActive: true,
-        createTime: new Date(),
-        updateTime: new Date(),
+        username: "",
+        password: "",
+        role: 1,
+        email: "",
+        phone: "",
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
-      this.dialogVisible = true;
+      this.dialogVisible = true; // 显示编辑对话框
     },
 
     handleEdit(row) {
+      // 将表格行数据赋值给编辑表单
       this.editForm = { ...row };
-      this.dialogVisible = true;
+      this.dialogVisible = true; // 显示编辑对话框
     },
     handleDialogClose() {
       this.editForm = {
-        ruleId: "",
-        ruleName: "",
-        deviceType: "",
-        warningLevel: "",
-        threshold: 0,
-        description: "",
-        isActive: true,
-        createTime: "",
-        updateTime: "",
+        id: "",
+        username: "",
+        password: "",
+        role: 1,
+        email: "",
+        phone: "",
+        createdAt: "",
+        updatedAt: "",
       };
     },
     async handleSave() {
       try {
-        if (this.editForm.ruleId) {
-          const response = await updateWarningRule(this.editForm);
-          console.log("res", response);
-          const index = this.warningRulesTableData.findIndex(
-            (item) => item.ruleId === this.editForm.ruleId
+        if (this.editForm.id) {
+          // 如果 id 存在，则是更新操作
+          const response = await updateAdmin(this.editForm.id, this.editForm);
+          console.log("Updated admin", response);
+          const index = this.adminTableData.findIndex(
+            (item) => item.id === this.editForm.id
           );
           if (index !== -1) {
-            this.warningRulesTableData.splice(index, 1, { ...this.editForm });
+            this.adminTableData.splice(index, 1, { ...this.editForm });
           }
           ElMessage({
             type: "success",
-            message: "Warning rule updated successfully!",
+            message: "Admin updated successfully!",
           });
         } else {
-          const newRule = await addWarningRule(this.editForm);
-          this.warningRulesTableData.push(newRule);
+          // 否则是新增操作
+          const newAdmin = await addAdmin(this.editForm);
+          console.log("newAdmin", newAdmin);
+          this.adminTableData.push(newAdmin); // 将新添加的管理员加入表格数据
           ElMessage({
             type: "success",
-            message: "Warning rule added successfully!",
+            message: "Admin added successfully!",
           });
         }
-        this.dialogVisible = false;
+        this.dialogVisible = false; // 关闭对话框
       } catch (error) {
+        console.error("Error saving admin:", error);
         ElMessage({
           type: "error",
-          message: "Failed to save rule.",
+          message: "Failed to save admin.",
         });
       }
     },
     handleDelete(row) {
       ElMessageBox.confirm(
-        "Are you sure you want to delete this warning rule?",
+        "Are you sure you want to delete this admin?",
         "Warning",
         {
           confirmButtonText: "Delete",
@@ -276,24 +289,16 @@ export default {
           type: "warning",
         }
       )
-        .then(async () => {
-          try {
-            const response = await deleteWarningRuleById(row.ruleId);
-            console.log("res", response);
-            const index = this.warningRulesTableData.findIndex(
-              (item) => item.ruleId === row.ruleId
-            );
-            if (index !== -1) {
-              this.warningRulesTableData.splice(index, 1);
-            }
+        .then(() => {
+          const index = this.adminTableData.findIndex(
+            (item) => item.id === row.id
+          );
+          if (index !== -1) {
+            deleteAdminById(row.id);
+            this.adminTableData.splice(index, 1); // 删除表格中的数据
             ElMessage({
               type: "success",
-              message: "Warning rule deleted successfully!",
-            });
-          } catch (error) {
-            ElMessage({
-              type: "error",
-              message: "Failed to delete rule.",
+              message: "Admin deleted successfully!",
             });
           }
         })

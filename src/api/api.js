@@ -97,6 +97,21 @@ export const getMonitoringPhotoById = (deviceId) => {
   return api.get(`/monitoringPhoto/device/${deviceId}`);
 };
 
+//admin
+export const getAllAdmins = () => {
+  return api.get("/admin/list");
+};
+export const getAdminInfo = () => {
+  return api.get("/admin/id");
+};
+export const getAllPermissions = () => {
+  return api.get("/adminPermission/list");
+};
+//气象数据接口
+export const getAllWeatherData = () => {
+  return api.get("/weather/getAllWeatherData");
+};
+
 export const login = (data) => {
-  return api.post("/login", data); // 登录接口
+  return api.post("/admin/login", data); // 登录接口
 };
