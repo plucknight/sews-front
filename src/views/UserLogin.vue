@@ -74,7 +74,7 @@ const Login = async () => {
     password: form.value.password,
   });
 
-  console.log("sssssssss");
+  console.log(form.value.username);
   if (!response.data || !response.data.token) {
     ElMessage.error("登录失败");
     return;

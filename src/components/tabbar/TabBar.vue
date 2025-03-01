@@ -42,7 +42,11 @@ const getUsername = async () => {
 // 退出登录
 const logout = () => {
   localStorage.removeItem("token"); // 清除 token
-  router.push("/map"); // 跳转到登录页面
+  localStorage.removeItem("role");
+  router.push("/map");
+  // .then(() => {
+  //   window.location.reload(); // 强制刷新页面
+  // }) // 跳转到登录页面
 };
 
 onMounted(getUsername);

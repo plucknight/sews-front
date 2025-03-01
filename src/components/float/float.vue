@@ -71,7 +71,8 @@ import {
   ElCheckbox,
 } from "element-plus";
 import { useRouter } from "vue-router";
-import { login } from "@/api/api";
+import { login, getAdminInfo } from "@/api/api";
+
 // 系统标题
 const title = "作物靶标害虫自动监测预警系统";
 
@@ -124,7 +125,8 @@ const Login = async () => {
   }
   // 存储 token（假设登录成功）
   localStorage.setItem("token", response.token);
-
+  const adminInfo = await getAdminInfo();
+  localStorage.setItem("role", adminInfo.role);
   // 根据用户选择决定是否保存账号和密码
   if (form.value.rememberMe) {
     localStorage.setItem("username", form.value.username);

@@ -24,7 +24,7 @@ export const getDeviceById = (device_id) => {
   return api.get(`/devices/${device_id}`);
 };
 export const deleteDeviceById = (device_id) => {
-  return api.get(`/devices/delete/${device_id}`);
+  return api.get(`/devices/deleteDevice/${device_id}`);
 };
 export const addDevice = (device) => {
   return api.post(`/devices/addDevice`, device);
@@ -114,4 +114,8 @@ export const getAllWeatherData = () => {
 
 export const login = (data) => {
   return api.post("/admin/login", data); // 登录接口
+};
+
+export const mapDevice = () => {
+  return api.get("/prediction-results/getAll");
 };

@@ -9,7 +9,7 @@ import { ref, onMounted } from "vue";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import geoJsonData from "@/assets/js/geo.json"; // 导入省级区域的GeoJSON数据
-
+import { mapDevice } from "@/api/api";
 let map = null;
 
 const initMap = () => {
@@ -35,7 +35,7 @@ const initMap = () => {
   return map;
 };
 
-let hoverLayer = null; // 用于保存当前高亮的图层（保持唯一）
+// 处理GeoJSON数据
 const processGeoJsonData = (node) => {
   if (node.properties.level === "province") {
     const geoData = node;
@@ -53,44 +53,84 @@ const processGeoJsonData = (node) => {
               offset: L.point(10, -40),
             }
           );
-
-          let currentHoverLayer = null;
-          // 鼠标悬停时高亮
-          layer.on("mouseover", () => {
-            if (hoverLayer) {
-              map.removeLayer(hoverLayer);
-            }
-
-            if (!currentHoverLayer) {
-              currentHoverLayer = L.geoJSON(geoData, {
-                style: {
-                  color: "#61AFEF",
-                  weight: 2,
-                  fillColor: "#61AFEF",
-                  fillOpacity: 0.5,
-                },
-              }).addTo(map);
-            }
-          });
-
-          // 鼠标移开时清除高亮图层
-          layer.on("mouseout", () => {
-            setTimeout(() => {
-              if (currentHoverLayer) {
-                map.removeLayer(currentHoverLayer);
-                currentHoverLayer = null;
-              }
-            }, 100);
-          });
         },
       }).addTo(map);
     }
   }
 };
 
+// 根据颜色获取图标
+const getIconByColor = (color) => {
+  const iconMap = {
+    green: require("@/assets/img/green.png"),
+    red: require("@/assets/img/red.png"),
+    yellow: require("@/assets/img/yellow.png"),
+  };
+  return L.icon({
+    iconUrl: iconMap[color] || iconMap["green"], // 默认使用绿色图标
+    iconSize: [25, 25],
+    iconAnchor: [12, 12],
+    popupAnchor: [0, -10],
+  });
+};
+// 添加设备标记到地图
+const addDeviceMarkers = async () => {
+  const devices = await getAllDevice(); // 调用方法获取设备数据
+
+  devices.forEach((device) => {
+    const {
+      latitude,
+      longitude,
+      deviceName,
+      location,
+      peekDayForecastValue,
+      shortTermForecastValue,
+      suggestion,
+      status,
+    } = device;
+
+    if (latitude && longitude) {
+      // 根据状态选择图标颜色
+      let iconColor = "green"; // 默认绿色
+      if (status === "warning") iconColor = "yellow";
+      if (status === "critical") iconColor = "red";
+
+      // 创建带有图标的标记
+      L.marker([latitude, longitude], { icon: getIconByColor(iconColor) })
+        .addTo(map)
+        .bindPopup(
+          `
+          <div style="font-size: 14px; color: #333; line-height: 1.6;">
+            <strong>设备名称:</strong> ${deviceName}<br>
+            <strong>位置:</strong> ${location}<br>
+            <strong>短期预测值:</strong> ${
+              shortTermForecastValue || "无数据"
+            }<br>
+            <strong>长期预测值:</strong> ${peekDayForecastValue || "无数据"}<br>
+            <strong>建议:</strong> ${suggestion || "暂无建议"}
+          </div>
+        `
+        );
+    }
+  });
+};
+
+// 获取所有设备数据的方法
+const getAllDevice = async () => {
+  try {
+    const response = await mapDevice(); // 调用 API 获取设备数据
+    console.log("设备数据:", response); // 打印日志以便调试
+    return response; // 返回 API 的响应数据
+  } catch (error) {
+    console.error("Error fetching device data:", error);
+    return []; // 如果发生错误，返回空数组以避免后续逻辑崩溃
+  }
+};
+
 onMounted(() => {
   console.log("组件挂载，初始化地图");
   initMap();
+  addDeviceMarkers(); // 初始化地图后添加设备标记
 });
 </script>
 

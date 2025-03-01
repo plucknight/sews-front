@@ -1,5 +1,5 @@
 <template>
-  <nav v-if="bigwidth" class="nav">
+  <nav v-if="bigwidth" class="nav" :key="navKey">
     <!-- 动态渲染菜单 -->
     <router-link v-for="item in filteredMenu" :key="item.to" :to="item.to">
       <div>{{ item.name }}</div>
@@ -8,9 +8,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue"; // 确保导入了 onUnmounted
 import { useRoute, useRouter } from "vue-router";
 import { getAdminInfo } from "@/api/api";
+
 // 响应式数据
 const bigwidth = ref(true);
 const userRole = ref(1); // 假设这是从接口或登录信息获取的角色
@@ -32,10 +33,11 @@ const menuItems = ref([
 const filteredMenu = computed(() =>
   menuItems.value.filter((item) => item.roles.includes(userRole.value))
 );
+
+// 获取用户角色
 const getUserRelo = async () => {
   try {
     const adminInfo = await getAdminInfo();
-    console.log("adminInfo" + adminInfo);
     if (adminInfo.role) {
       userRole.value = adminInfo.role;
     }
@@ -43,6 +45,7 @@ const getUserRelo = async () => {
     console.error("Error fetching weather data:", error);
   }
 };
+
 // 监听窗口大小变化
 const handleResize = () => {
   bigwidth.value = window.innerWidth > 720;
@@ -55,7 +58,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  window.removeEventListener("resize", handleResize);
+  window.removeEventListener("resize", handleResize); // 移除事件监听器
 });
 </script>
 

@@ -70,26 +70,32 @@
                 placeholder="输入作物类型"
               ></el-input>
             </el-form-item>
-            <el-form-item label="管理员姓名">
+
+            <el-form-item label="管理员id">
               <el-input
-                v-model="newDevice.adminName"
-                placeholder="输入管理员姓名"
+                v-model="newDevice.adminId"
+                placeholder="输入管理员id"
               ></el-input>
             </el-form-item>
-            <el-form-item label="管理员电话">
-              <el-input
-                v-model="newDevice.adminPhone"
-                placeholder="输入管理员电话"
-              ></el-input>
+
+            <el-form-item label="安装时间" prop="installTime">
+              <el-date-picker
+                v-model="newDevice.installTime"
+                type="datetime"
+                placeholder="Select date and time"
+                style="width: 100%"
+              />
+            </el-form-item>
+            <el-form-item label="状态" prop="status">
+              <el-input v-model="newDevice.status" />
             </el-form-item>
           </el-form>
 
           <span slot="footer" class="dialog-footer">
             <el-button @click="isDialogVisible = false">取消</el-button>
-            <el-button type="primary" @click="addDevice1">确定</el-button>
+            <el-button type="primary" @click="handleAdd">确定</el-button>
           </span>
         </el-dialog>
-        <el-button type="success" @click="handleAdd">Add New</el-button>
       </div>
     </div>
 
@@ -186,8 +192,8 @@
         <el-form-item label="cropType" prop="cropType">
           <el-input v-model="editForm.cropType" />
         </el-form-item>
-        <el-form-item label="adminName" prop="adminName">
-          <el-input v-model="editForm.adminName" />
+        <el-form-item label="adminId" prop="adminId">
+          <el-input v-model="editForm.adminId" />
         </el-form-item>
         <el-form-item label="adminPhone" prop="adminPhone">
           <el-input v-model="editForm.adminPhone" />
@@ -252,14 +258,23 @@ const editForm = reactive({
   latitude: "",
   longitude: "",
   cropType: "",
-  adminName: "",
   adminId: "",
-  adminPhone: "",
   installTime: "",
   status: "",
   dataTime: "",
 });
-
+const newDevice = reactive({
+  deviceId: "",
+  deviceName: "",
+  trapsId: "",
+  location: "",
+  latitude: null,
+  longitude: null,
+  cropType: "",
+  installTime: "",
+  status: "",
+  dataTime: "",
+});
 // Methods
 const fetchAllDevices = async () => {
   try {
@@ -292,25 +307,6 @@ const handleSearch = async () => {
   }
 };
 
-const handleAdd = () => {
-  // Reset form and prepare for adding a new device
-  Object.assign(editForm, {
-    deviceName: "",
-    trapsId: "",
-    location: "",
-    latitude: "",
-    longitude: "",
-    cropType: "",
-    adminName: "",
-    adminId: "",
-    adminPhone: "",
-    installTime: new Date(),
-    status: "",
-    dataTime: new Date(),
-  });
-  dialogVisible.value = true;
-};
-
 const handleEdit = (row) => {
   // Fill form with data from the selected row
   Object.assign(editForm, row);
@@ -320,15 +316,14 @@ const handleEdit = (row) => {
 const handleDialogClose = () => {
   // Reset form
   Object.assign(editForm, {
-    deviceId: "",
     deviceName: "",
     trapsId: "",
     location: "",
     latitude: "",
     longitude: "",
     cropType: "",
-    adminName: "",
     adminId: "",
+    adminName: "",
     adminPhone: "",
     installTime: "",
     status: "",
@@ -338,34 +333,51 @@ const handleDialogClose = () => {
 
 const handleSave = async () => {
   try {
-    if (editForm.deviceId) {
-      // Update device
-      const response = await updateDevice(editForm.deviceId, editForm);
-      const index = deviceTableData.value.findIndex(
-        (item) => item.deviceId === editForm.deviceId
-      );
-      if (index !== -1) {
-        deviceTableData.value.splice(index, 1, { ...editForm });
-      }
-      ElMessage({
-        type: "success",
-        message: "Device updated successfully!",
-      });
-    } else {
-      // Add new device
-      const newDevice = await addDevice(editForm);
-      deviceTableData.value.push(newDevice);
-      ElMessage({
-        type: "success",
-        message: "Device added successfully!",
-      });
+    // Update the device
+    const response = await updateDevice(editForm.deviceId, editForm);
+
+    // Update the table data
+    const index = deviceTableData.value.findIndex(
+      (item) => item.deviceId === editForm.deviceId
+    );
+    if (index !== -1) {
+      deviceTableData.value.splice(index, 1, { ...editForm });
     }
+
+    ElMessage({
+      type: "success",
+      message: "Device updated successfully!",
+    });
+
     dialogVisible.value = false;
   } catch (error) {
-    console.error("Error saving device:", error);
+    console.error("Error updating device:", error);
     ElMessage({
       type: "error",
-      message: "Failed to save device.",
+      message: "Failed to update device.",
+    });
+  }
+};
+const handleAdd = async () => {
+  try {
+    console.log(newDevice);
+    // Add a new device
+    const device = await addDevice(newDevice);
+
+    // Add the new device to the table data
+    deviceTableData.value.push(device);
+
+    isDialogVisible.value = false;
+    ElMessage({
+      type: "success",
+      message: "Device added successfully!",
+    });
+    handleSearch();
+  } catch (error) {
+    console.error("Error adding device:", error);
+    ElMessage({
+      type: "error",
+      message: "Failed to add device.",
     });
   }
 };
@@ -385,6 +397,7 @@ const handleDelete = (row) => {
         (item) => item.deviceId === row.deviceId
       );
       if (index !== -1) {
+        console.log("id " + row.deviceId);
         await deleteDeviceById(row.deviceId);
         deviceTableData.value.splice(index, 1);
         ElMessage({
@@ -400,16 +413,7 @@ const handleDelete = (row) => {
       });
     });
 };
-const newDevice = ref({
-  deviceName: "",
-  trapsId: "",
-  location: "",
-  latitude: null,
-  longitude: null,
-  cropType: "",
-  adminName: "",
-  adminPhone: "",
-});
+
 const isDialogVisible = ref(false);
 const showInputDialog = () => {
   console.log("点击了添加标记按钮");
@@ -417,19 +421,6 @@ const showInputDialog = () => {
   console.log("Dialog 显示状态:", isDialogVisible.value); // 输出弹窗状态
 };
 
-const getIconByColor = (color) => {
-  const iconMap = {
-    green: require("@/assets/img/green.png"),
-    red: require("@/assets/img/red.png"),
-    yellow: require("@/assets/img/yellow.png"),
-  };
-  return L.icon({
-    iconUrl: iconMap[color],
-    iconSize: [25, 25],
-    iconAnchor: [10, 10],
-    popupAnchor: [0, -10],
-  });
-};
 // 重置表单
 const resetForm = () => {
   newDevice.value = {
@@ -443,47 +434,7 @@ const resetForm = () => {
     adminPhone: "",
   };
 };
-const addDevice1 = async () => {
-  const longTermPrediction = "长期预测结果：温暖气候可能导致害虫数量上升";
-  const previousResults = "前两次监测结果：数量分别为 20 和 25";
-  const currentPrediction = "本次预测结果：预计数量为 30";
-  const preventionSuggestions = "防治建议：使用生物农药进行防治";
-  console.log("Add Marker Function Called");
-  const deviceData = { ...newDevice.value }; // 获取表单数据
-  try {
-    const response = await addDevice(deviceData); // 发送请求到后端
-    console.log("设备添加成功", response.data);
 
-    const { lat, lng, color } = newDevice.value;
-    if (lat !== null && lng !== null) {
-      const newIcon = getIconByColor(color); // 根据选择的颜色获取图标
-      const currentMap = initMap();
-      console.log(`Adding marker at Lat: ${lat}, Lng: ${lng}, Color: ${color}`);
-      // 在指定位置添加新标记
-      L.marker([lat, lng], { icon: newIcon })
-        .addTo(currentMap)
-        .bindPopup(
-          `
-        <div style="font-size: 14px; color: #333; line-height: 1.6;">
-          <strong>新标记: (${lat}, ${lng})</strong><br>
-          <div style="color: #007bff; font-weight: bold;">${longTermPrediction}</div><br>
-          <div style="color: #28a745;">${previousResults}</div><br>
-          <div style="color: #ffc107;">${currentPrediction}</div><br>
-          <div style="color: #dc3545; font-style: italic;">${preventionSuggestions}</div>
-        </div>
-      `
-        )
-        .openPopup();
-
-      isDialogVisible.value = false; // 关闭对话框
-      resetForm(); // 重置表单
-    }
-  } catch (error) {
-    console.error("添加设备失败", error);
-    alert("设备添加失败，请重试");
-  }
-};
-// Lifecycle hooks
 onMounted(() => {
   fetchAllDevices();
 });

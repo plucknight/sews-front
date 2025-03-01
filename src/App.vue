@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <TabBar v-if="loginrouter === false" :title="title" />
+    <TabBar v-if="loginrouter === true" :title="title" />
 
     <router-view v-slot="{ Component }">
       <keep-alive>
@@ -28,12 +28,12 @@ watch(
   route,
   (newRoute) => {
     if (newRoute.name === "login" || newRoute.name === "map") {
-      loginrouter.value = true;
-    } else {
       loginrouter.value = false;
+    } else {
+      loginrouter.value = true;
     }
   },
-  { immediate: true }
+  { immediate: false }
 );
 </script>
 
