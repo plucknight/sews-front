@@ -121,7 +121,7 @@ export default {
     return {
       monitoringPhotosTableData: [],
       currentPage: 1,
-      pagesize: 10,
+      pagesize: 5,
       dialogVisible: false,
       editForm: {
         photoId: "",

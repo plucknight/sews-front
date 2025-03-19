@@ -99,10 +99,24 @@
         <el-form-item label="modelVersion" prop="modelVersion">
           <el-input v-model="editForm.modelVersion" />
         </el-form-item>
-        <el-form-item label="modelFilePath" prop="modelFilePath">
-          <el-input v-model="editForm.modelFilePath" />
+        <!-- 新增上传文件的按钮 -->
+        <el-form-item label="上传文件">
+          <el-upload
+            class="upload-demo"
+            :auto-upload="false"
+            :show-file-list="false"
+            :on-change="handleFileChange"
+            :before-upload="beforeUpload"
+            ref="upload"
+          >
+            <el-button type="primary">点击上传文件</el-button>
+            <span v-if="selectedFile" style="margin-left: 10px; color: #666">
+              {{ selectedFile.name }}
+            </span>
+          </el-upload>
         </el-form-item>
       </el-form>
+
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">Cancel</el-button>
         <el-button type="primary" @click="handleSave">Save</el-button>
@@ -124,6 +138,7 @@ import {
   ElForm,
   ElFormItem,
   ElInput,
+  ElUpload,
 } from "element-plus";
 import Title from "@/components/device/Title.vue"; // 假设 Title 是一个已定义的组件
 import {
@@ -132,6 +147,7 @@ import {
   updateModel,
   addModel,
   deleteModelById,
+  uploadOnnxModel,
 } from "@/api/api"; // 引入封装好的请求方法
 import { formatDate } from "@/utils/dateUtils.js"; // 引入自定义的日期格式化函数
 
@@ -164,12 +180,48 @@ export default {
         dataTime: "",
       },
       searchQuery: "", // 用于存储查询框输入的内容
+      selectedFile: null,
+      uploadUrl: "/minio/upload",
     };
   },
   mounted() {
     this.fetchgetAllModels();
   },
   methods: {
+    handleFileChange(file) {
+      this.selectedFile = file.raw;
+    },
+    handleUploadSuccess(response, file, fileList) {
+      console.log("上传成功：", response);
+      if (response && response.filePath) {
+        // 将返回的文件路径赋值给 editForm 中的 modelFilePath 字段
+        this.editForm.modelFilePath = response.filePath;
+      }
+    },
+    // 上传前的校验（如需要校验文件类型、大小等，可在此添加逻辑）
+    // 修改上传前的校验方法
+    beforeUpload(file) {
+      const isValidType = file.type === "application/octet-stream";
+      const isValidSize = file.size / 1024 / 1024 < 20;
+
+      if (!isValidType) {
+        ElMessage.error("只能上传ONNX格式文件");
+        return false;
+      }
+      if (!isValidSize) {
+        ElMessage.error("文件大小不能超过20MB");
+        return false;
+      }
+
+      // 手动上传需要返回false
+      return false;
+    },
+
+    // 重置时清空文件
+    handleDialogClose() {
+      this.selectedFile = null;
+      // 其他重置逻辑...
+    },
     formatDate,
     async fetchgetAllModels() {
       try {
@@ -235,42 +287,73 @@ export default {
     },
     async handleSave() {
       try {
-        if (this.editForm.modelId) {
-          // 如果 modelId 存在，则是更新操作
-          const response = await updateModel(
-            this.editForm.modelId,
-            this.editForm
-          );
-          console.log("res", response);
-          const index = this.modelTableData.findIndex(
-            (item) => item.modelId === this.editForm.modelId
-          );
-          if (index !== -1) {
-            this.modelTableData.splice(index, 1, { ...this.editForm });
+        // 如果有文件需要上传
+        if (this.selectedFile) {
+          const formData = new FormData();
+          formData.append("onnxFile", this.selectedFile);
+
+          // 执行文件上传
+          const uploadRes = await uploadOnnxModel(formData);
+          if (uploadRes && uploadRes.filePath) {
+            this.editForm.modelFilePath = uploadRes.filePath;
           }
-          ElMessage({
-            type: "success",
-            message: "Model updated successfully!",
-          });
-        } else {
-          // 否则是新增操作
-          const newModel = await addModel(this.editForm);
-          console.log("newModel", newModel);
-          this.modelTableData.push(newModel); // 将新添加的模型加入表格数据
-          ElMessage({
-            type: "success",
-            message: "Model added successfully!",
-          });
         }
-        this.dialogVisible = false; // 关闭对话框
+
+        // 保存模型数据
+        if (this.editForm.modelId) {
+          await updateModel(this.editForm.modelId, this.editForm);
+          // 更新本地数据...
+        } else {
+          await addModel(this.editForm);
+          // 添加新数据...
+        }
+
+        ElMessage.success(this.editForm.modelId ? "更新成功" : "添加成功");
+        this.dialogVisible = false;
+        this.selectedFile = null; // 清空已选文件
       } catch (error) {
-        console.error("Error saving model:", error);
-        ElMessage({
-          type: "error",
-          message: "Failed to save model.",
-        });
+        ElMessage.error("操作失败");
+        console.error("Error:", error);
       }
     },
+    // async handleSave() {
+    //   try {
+    //     if (this.editForm.modelId) {
+    //       // 如果 modelId 存在，则是更新操作
+    //       const response = await updateModel(
+    //         this.editForm.modelId,
+    //         this.editForm
+    //       );
+    //       console.log("res", response);
+    //       const index = this.modelTableData.findIndex(
+    //         (item) => item.modelId === this.editForm.modelId
+    //       );
+    //       if (index !== -1) {
+    //         this.modelTableData.splice(index, 1, { ...this.editForm });
+    //       }
+    //       ElMessage({
+    //         type: "success",
+    //         message: "Model updated successfully!",
+    //       });
+    //     } else {
+    //       // 否则是新增操作
+    //       const newModel = await addModel(this.editForm);
+    //       console.log("newModel", newModel);
+    //       this.modelTableData.push(newModel); // 将新添加的模型加入表格数据
+    //       ElMessage({
+    //         type: "success",
+    //         message: "Model added successfully!",
+    //       });
+    //     }
+    //     this.dialogVisible = false; // 关闭对话框
+    //   } catch (error) {
+    //     console.error("Error saving model:", error);
+    //     ElMessage({
+    //       type: "error",
+    //       message: "Failed to save model.",
+    //     });
+    //   }
+    // },
     handleDelete(row) {
       ElMessageBox.confirm(
         "Are you sure you want to delete this model?",

@@ -119,3 +119,7 @@ export const login = (data) => {
 export const mapDevice = () => {
   return api.get("/prediction-results/getAll");
 };
+
+export const uploadOnnxModel = (onnxFile) => {
+  return api.post(`/minio/upload`, onnxFile);
+};

@@ -88,12 +88,12 @@ const addDeviceMarkers = async () => {
       suggestion,
       status,
     } = device;
-
     if (latitude && longitude) {
+      console.log(device);
       // 根据状态选择图标颜色
       let iconColor = "green"; // 默认绿色
-      if (status === "warning") iconColor = "yellow";
-      if (status === "critical") iconColor = "red";
+      if (shortTermForecastValue > 20) iconColor = "yellow";
+      if (shortTermForecastValue > 40) iconColor = "red";
 
       // 创建带有图标的标记
       L.marker([latitude, longitude], { icon: getIconByColor(iconColor) })
